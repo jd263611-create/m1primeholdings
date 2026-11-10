@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://m1primeholdings.com/sitemap.xml
