@@ -526,6 +526,35 @@ What is your best move?`;
             }
 
             if (!aiMove) {
+                // One retry before falling back, so a transient failure doesn't cost a real move.
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) throw new Error("API Network Response was not ok");
+
+                    const result = await response.json();
+                    if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts) {
+                        const jsonText = result.candidates[0].content.parts[0].text;
+                        const parsed = JSON.parse(jsonText);
+                        aiMove = parsed.move;
+                    }
+
+                    if (!aiMove || !possibleMoves.includes(aiMove)) {
+                        aiMove = null;
+                    }
+
+                } catch (error) {
+                    console.error("Failed to get move from Gemini (retry):", error);
+                    aiMove = null;
+                }
+            }
+
+            if (!aiMove) {
+                coachMessage.innerText = "Coach couldn't reach Gemini for that move, so I played a fallback move — it might not be a strong one.";
                 aiMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
             }
 
